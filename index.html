@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EM Radiation Explorer — CAPE Chemistry</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #05080f;
+  --surface: #0d1421;
+  --surface2: #121c2e;
+  --border: rgba(80,160,255,0.13);
+  --text: #c8d8f0;
+  --text-dim: #6b8ab5;
+  --accent: #00d4ff;
+  --accent2: #7b2fff;
+  --glow: rgba(0,212,255,0.25);
+  --base-font: 16px;
+}
+/* ── LIGHT THEME ── */
+body.light {
+  --bg: #eef2f8;
+  --surface: #ffffff;
+  --surface2: #f0f4fb;
+  --border: rgba(0,100,200,0.18);
+  --text: #1a2a42;
+  --text-dim: #4a6080;
+  --accent: #0066cc;
+  --accent2: #6600cc;
+  --glow: rgba(0,100,200,0.2);
+}
+body.light::before { background-image: none; }
+body.light .glass { background: rgba(255,255,255,0.88); }
+body.light .info-card,
+body.light .calc-card,
+body.light .q-card,
+body.light .trans-info,
+body.light .eq-box { background: #f5f8ff; }
+body.light .input-row input[type="number"],
+body.light .input-row select,
+body.light .calc-ans-row input {
+  background: #ffffff; color: var(--text);
+  border-color: rgba(0,100,200,0.28);
+}
+body.light .result-box { background: rgba(0,100,200,0.07); }
+body.light .status-bar { background: rgba(0,0,0,0.05); }
+body.light .wave-panel { background: rgba(0,0,0,0.04); }
+body.light .formula-display { background: rgba(0,100,200,0.06); color: var(--accent); }
+body.light .rad-btn { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.12); }
+body.light .rad-btn:hover { background: rgba(0,100,200,0.07); }
+body.light .opt-btn { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.1); }
+body.light .opt-btn:hover:not(:disabled) { background: rgba(0,100,200,0.07); }
+body.light .constants-bar { background: rgba(0,100,200,0.05); }
+body.light header h1 { background: linear-gradient(135deg,#0055bb 0%,#6600cc 50%,#cc0077 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+body.light .prog-wrap { background: rgba(0,0,0,0.1); }
+body.light #sliderWaveCanvas { background: rgba(0,0,0,0.05); }
+body.light ::-webkit-scrollbar-track { background: #dde4ef; }
+body.light ::-webkit-scrollbar-thumb { background: rgba(0,100,200,0.3); }
+body.light .q-text { color: #1a2a42; }
+body.light .feedback.ok { background: rgba(0,160,60,.09); color: #006622; }
+body.light .feedback.bad { background: rgba(200,0,0,.08); color: #aa0000; }
+
+/* ── CONTROLS BAR ── */
+.controls-bar {
+  position: relative; z-index: 10;
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 8px; padding: 7px 22px;
+  background: rgba(0,0,0,0.25);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+body.light .controls-bar { background: rgba(0,0,0,0.04); }
+.ctrl-label {
+  font-family: 'Share Tech Mono', monospace; font-size: 10px;
+  letter-spacing: 1.5px; color: var(--text-dim); text-transform: uppercase;
+  margin-right: 2px;
+}
+.ctrl-btn {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text);
+  font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 600;
+  padding: 5px 12px; cursor: pointer; transition: all .2s;
+  display: flex; align-items: center; gap: 5px;
+}
+.ctrl-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 8px var(--glow); }
+.ctrl-btn.theme-btn { min-width: 108px; justify-content: center; }
+.font-size-display {
+  font-family: 'Share Tech Mono', monospace; font-size: 12px;
+  color: var(--accent); background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 5px 10px; min-width: 46px; text-align: center;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Exo 2',sans-serif;font-size:var(--base-font);line-height:1.6;overflow-x:hidden;transition:background .3s,color .3s;}
+body::before{content:'';position:fixed;inset:0;background-image:
+  radial-gradient(1px 1px at 15% 20%,rgba(200,220,255,0.5) 0%,transparent 100%),
+  radial-gradient(1px 1px at 75% 8%,rgba(200,220,255,0.4) 0%,transparent 100%),
+  radial-gradient(1px 1px at 45% 55%,rgba(200,220,255,0.35) 0%,transparent 100%),
+  radial-gradient(1px 1px at 88% 75%,rgba(200,220,255,0.4) 0%,transparent 100%),
+  radial-gradient(1px 1px at 8% 68%,rgba(200,220,255,0.3) 0%,transparent 100%),
+  radial-gradient(1px 1px at 60% 88%,rgba(200,220,255,0.3) 0%,transparent 100%),
+  radial-gradient(1px 1px at 30% 40%,rgba(200,220,255,0.25) 0%,transparent 100%);
+  pointer-events:none;z-index:0;}
+header{position:relative;z-index:10;padding:22px 40px 0;text-align:center;}
+.header-badge{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--accent);border:1px solid rgba(0,212,255,0.4);padding:4px 14px;border-radius:2px;margin-bottom:10px;text-transform:uppercase;}
+header h1{font-family:'Orbitron',sans-serif;font-size:clamp(1.5rem,3.5vw,2.6rem);font-weight:900;letter-spacing:2px;background:linear-gradient(135deg,#00d4ff 0%,#7b2fff 50%,#ff44aa 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:5px;}
+header p{color:var(--text-dim);font-size:13px;font-weight:300;letter-spacing:1px;margin-bottom:24px;}
+nav{position:relative;z-index:10;display:flex;justify-content:center;gap:2px;padding:0 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.tab-btn{background:none;border:none;border-bottom:3px solid transparent;color:var(--text-dim);font-family:'Exo 2',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.8px;padding:12px 18px;cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:6px;white-space:nowrap;text-transform:uppercase;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);text-shadow:0 0 18px var(--accent);}
+main{position:relative;z-index:5;max-width:1300px;margin:0 auto;padding:28px 18px;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.glass{background:rgba(13,20,33,0.75);border:1px solid var(--border);border-radius:12px;backdrop-filter:blur(10px);padding:22px;}
+.section-title{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--accent),transparent);opacity:.3;}
+/* Spectrum */
+#spectrumCanvas{width:100%;display:block;border-radius:8px;cursor:pointer;}
+.region-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;}
+@media(max-width:600px){.region-detail-grid{grid-template-columns:1fr;}}
+.info-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;transition:border-color .3s;}
+.info-card h3{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;margin-bottom:10px;letter-spacing:1px;}
+.info-row{display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:1px solid rgba(80,130,200,.08);font-size:12.5px;gap:10px;}
+.info-row:last-child{border-bottom:none;}
+.info-label{color:var(--text-dim);flex-shrink:0;}
+.info-val{font-family:'Share Tech Mono',monospace;font-size:11.5px;text-align:right;}
+.wave-panel{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:14px;}
+#waveCanvas{width:100%;display:block;height:70px;}
+/* Calculator */
+.calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+@media(max-width:680px){.calc-grid{grid-template-columns:1fr;}}
+.calc-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:18px;}
+.calc-card h3{font-family:'Orbitron',sans-serif;font-size:11.5px;color:var(--accent);margin-bottom:14px;letter-spacing:1px;}
+.formula-display{font-family:'Share Tech Mono',monospace;font-size:21px;text-align:center;padding:12px;background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.2);border-radius:7px;margin-bottom:18px;color:var(--accent);letter-spacing:2px;}
+.input-group{margin-bottom:12px;}
+.input-group label{display:block;font-size:11.5px;font-weight:600;color:var(--text-dim);margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;}
+.input-row{display:flex;gap:7px;}
+.input-row input[type="number"]{flex:1;background:rgba(0,0,0,.45);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:15px;padding:9px 13px;outline:none;transition:border-color .2s;}
+.input-row input[type="number"]:focus{border-color:var(--accent);box-shadow:0 0 8px rgba(0,212,255,.2);}
+.input-row select{background:rgba(0,0,0,.45);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:9px 7px;outline:none;cursor:pointer;font-family:'Exo 2',sans-serif;}
+.calc-btn{width:100%;padding:11px;background:linear-gradient(135deg,#0077bb,#004488);border:1px solid rgba(0,180,255,.35);border-radius:7px;color:white;font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .2s;margin-top:5px;text-transform:uppercase;}
+.calc-btn:hover{background:linear-gradient(135deg,#0099ee,#0066bb);box-shadow:0 0 16px rgba(0,140,255,.4);transform:translateY(-1px);}
+.result-box{margin-top:12px;padding:13px;background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.22);border-radius:7px;font-family:'Share Tech Mono',monospace;font-size:15px;color:var(--accent);text-align:center;min-height:50px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;}
+.result-box .rl{font-family:'Exo 2',sans-serif;font-size:10.5px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;}
+.result-box .rv{font-size:18px;}
+.divider{margin:14px 0;border-top:1px solid var(--border);}
+input[type="range"]{-webkit-appearance:none;width:100%;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));outline:none;margin:8px 0;}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 8px var(--accent);}
+.slider-labels{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;}
+.three-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+@media(max-width:480px){.three-cols{grid-template-columns:1fr;}}
+#sliderWaveCanvas{width:100%;display:block;height:66px;margin-top:12px;border-radius:6px;background:rgba(0,0,0,.3);}
+/* Transitions */
+.trans-layout{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:start;}
+@media(max-width:780px){.trans-layout{grid-template-columns:1fr;}}
+#transitionCanvas{width:100%;display:block;}
+.trans-controls{min-width:210px;}
+.rad-btn{width:100%;padding:11px 14px;border-radius:7px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:'Exo 2',sans-serif;transition:all .22s;text-align:left;display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+.rad-btn:hover{background:rgba(255,255,255,.07);transform:translateX(3px);}
+.rad-btn.active{border-color:currentColor;box-shadow:0 0 10px currentColor;}
+.rad-btn[data-rad="ir"]{color:#ff6622;}
+.rad-btn[data-rad="visible"]{color:#88ff22;}
+.rad-btn[data-rad="uv"]{color:#aa33ff;}
+.rad-btn[data-rad="xray"]{color:#00bbff;}
+.trans-info{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:13px;font-size:12.5px;line-height:1.75;margin-top:13px;}
+.trans-info h4{font-family:'Orbitron',sans-serif;font-size:10px;margin-bottom:8px;letter-spacing:1px;}
+.eq-box{margin-top:14px;background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.15);border-radius:7px;padding:13px;font-size:12px;}
+.eq-box .eq-title{font-family:'Orbitron',sans-serif;font-size:10px;color:var(--accent);margin-bottom:8px;letter-spacing:1px;}
+.eq-box .eq-formula{font-family:'Share Tech Mono',monospace;font-size:17px;text-align:center;color:#e0eeff;margin:6px 0;}
+.status-bar{text-align:center;font-family:'Share Tech Mono',monospace;font-size:12.5px;color:var(--text-dim);margin-top:10px;min-height:38px;padding:6px;background:rgba(0,0,0,.25);border-radius:6px;}
+/* Quiz */
+.quiz-header{display:flex;align-items:center;gap:12px;margin-bottom:22px;}
+.prog-wrap{flex:1;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;transition:width .4s ease;}
+.prog-text{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-dim);white-space:nowrap;}
+.score-text{font-family:'Orbitron',sans-serif;font-size:12px;color:var(--accent);white-space:nowrap;}
+.q-card{background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:22px;}
+.q-badge{display:inline-block;font-size:9.5px;font-weight:600;letter-spacing:1px;padding:3px 10px;border-radius:20px;text-transform:uppercase;margin-bottom:11px;font-family:'Exo 2',sans-serif;}
+.b-mcq{background:rgba(0,212,255,.13);color:#00d4ff;border:1px solid rgba(0,212,255,.3);}
+.b-calc{background:rgba(123,47,255,.13);color:#9b6dff;border:1px solid rgba(123,47,255,.3);}
+.b-id{background:rgba(255,150,0,.13);color:#ffaa44;border:1px solid rgba(255,150,0,.3);}
+.q-text{font-size:15.5px;font-weight:500;margin-bottom:16px;line-height:1.75;color:#ddeeff;white-space:pre-wrap;}
+.opts-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+@media(max-width:480px){.opts-grid{grid-template-columns:1fr;}}
+.opt-btn{padding:11px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);border-radius:7px;color:var(--text);font-size:13.5px;cursor:pointer;font-family:'Exo 2',sans-serif;transition:all .2s;text-align:left;}
+.opt-btn:hover:not(:disabled){background:rgba(0,212,255,.07);border-color:rgba(0,212,255,.3);transform:translateX(2px);}
+.opt-btn.correct{background:rgba(0,255,100,.11);border-color:#00ff64;color:#00ff64;}
+.opt-btn.wrong{background:rgba(255,50,50,.11);border-color:#ff3232;color:#ff7777;}
+.opt-btn:disabled{cursor:default;}
+.calc-ans-row{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+.calc-ans-row input{flex:1;min-width:120px;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:16px;padding:9px 13px;outline:none;}
+.calc-ans-row input:focus{border-color:var(--accent);}
+.unit-label{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--accent);white-space:nowrap;}
+.submit-btn{padding:9px 18px;background:linear-gradient(135deg,var(--accent2),#440088);border:1px solid rgba(123,47,255,.45);border-radius:7px;color:white;font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.submit-btn:hover{box-shadow:0 0 14px rgba(123,47,255,.5);transform:translateY(-1px);}
+.feedback{padding:11px 15px;border-radius:7px;font-size:13.5px;margin-top:9px;display:none;line-height:1.65;}
+.feedback.ok{background:rgba(0,255,100,.09);border:1px solid rgba(0,255,100,.28);color:#88ffaa;}
+.feedback.bad{background:rgba(255,50,50,.09);border:1px solid rgba(255,50,50,.28);color:#ffaaaa;}
+.next-btn{margin-top:14px;padding:11px 26px;background:linear-gradient(135deg,#0077bb,var(--accent2));border:1px solid rgba(0,212,255,.28);border-radius:7px;color:white;font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .2s;text-transform:uppercase;display:none;}
+.next-btn:hover{box-shadow:0 0 18px rgba(0,212,255,.4);transform:translateY(-1px);}
+.quiz-done{text-align:center;padding:36px 18px;display:none;}
+.quiz-done h2{font-family:'Orbitron',sans-serif;font-size:24px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px;}
+.final-score{font-size:66px;font-family:'Orbitron',sans-serif;font-weight:900;color:var(--accent);text-shadow:0 0 28px var(--accent);margin:16px 0;}
+.restart-btn{padding:13px 38px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:8px;color:white;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .2s;text-transform:uppercase;margin-top:8px;}
+.restart-btn:hover{box-shadow:0 0 28px rgba(0,212,255,.5);transform:translateY(-2px);}
+.constants-bar{display:flex;flex-wrap:wrap;gap:14px;background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.13);border-radius:7px;padding:11px 15px;margin-bottom:16px;}
+.const-item{font-family:'Share Tech Mono',monospace;font-size:11.5px;color:var(--text-dim);}
+.const-item span{color:var(--accent);}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:var(--surface);}
+::-webkit-scrollbar-thumb{background:rgba(0,212,255,.28);border-radius:3px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-badge">CAPE Chemistry · Unit 2 · Module 2 · Spec Obj 4.1–4.3</div>
+  <h1>Electromagnetic Radiation Explorer</h1>
+  <p>Spectroscopic Methods of Analysis &nbsp;·&nbsp; Interactive Lesson Tool</p>
+</header>
+<nav>
+  <button class="tab-btn active" data-tab="spectrum">🌈 EM Spectrum</button>
+  <button class="tab-btn" data-tab="calculator">🔢 Wave Calculator</button>
+  <button class="tab-btn" data-tab="transitions">⚛️ Atomic Transitions</button>
+  <button class="tab-btn" data-tab="quiz">📝 Quiz</button>
+</nav>
+<!-- ======== CONTROLS BAR ======== -->
+<div class="controls-bar">
+  <span class="ctrl-label">Theme</span>
+  <button class="ctrl-btn theme-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light / dark theme">
+    <span id="theme-icon">☀️</span><span id="theme-label">Light Mode</span>
+  </button>
+  <span class="ctrl-label" style="margin-left:10px;">Font Size</span>
+  <button class="ctrl-btn" onclick="changeFontSize(-1)" title="Decrease font size" aria-label="Decrease font size">A−</button>
+  <div class="font-size-display" id="font-size-display">16px</div>
+  <button class="ctrl-btn" onclick="changeFontSize(1)" title="Increase font size" aria-label="Increase font size">A+</button>
+</div>
+<main>
+
+<!-- ======== TAB 1: SPECTRUM ======== -->
+<div id="tab-spectrum" class="tab-panel active">
+  <div class="glass" style="margin-bottom:16px;">
+    <div class="section-title">The Electromagnetic Spectrum</div>
+    <p style="font-size:12.5px;color:var(--text-dim);margin-bottom:14px;">
+      All EM radiation travels at <strong style="color:#adc8ff;">c = 3.0 × 10⁸ m s⁻¹</strong> in air.
+      Click on any region of the spectrum below to explore its properties.
+    </p>
+    <canvas id="spectrumCanvas" height="220"></canvas>
+    <div id="spec-hint" style="text-align:center;font-size:12px;color:var(--text-dim);margin-top:8px;font-style:italic;">↑ Click a region to see details</div>
+  </div>
+  <div id="region-detail" style="display:none;">
+    <div class="region-detail-grid">
+      <div class="info-card" id="region-main-card">
+        <h3 id="region-name">—</h3>
+        <div class="info-row"><span class="info-label">Frequency Range</span><span class="info-val" id="region-freq">—</span></div>
+        <div class="info-row"><span class="info-label">Wavelength Range</span><span class="info-val" id="region-wave">—</span></div>
+        <div class="info-row"><span class="info-label">Energy per photon</span><span class="info-val" id="region-energy">—</span></div>
+        <div class="info-row"><span class="info-label">Type</span><span class="info-val" id="region-type">—</span></div>
+        <div class="info-row"><span class="info-label">Danger Level</span><span class="info-val" id="region-danger">—</span></div>
+      </div>
+      <div class="info-card">
+        <h3 style="font-family:'Orbitron';font-size:11px;color:#adc8ff;letter-spacing:1px;">Applications & Effects</h3>
+        <div id="region-uses" style="font-size:12.5px;line-height:1.8;color:var(--text-dim);"></div>
+      </div>
+    </div>
+    <div class="wave-panel" id="wave-panel-area">
+      <div style="font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono';margin-bottom:6px;" id="wave-label">WAVE PATTERN</div>
+      <canvas id="waveCanvas"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ======== TAB 2: CALCULATOR ======== -->
+<div id="tab-calculator" class="tab-panel">
+  <div class="glass" style="margin-bottom:16px;">
+    <div class="section-title">Physical Constants</div>
+    <div class="constants-bar">
+      <div class="const-item">c = <span>3.0 × 10⁸ m s⁻¹</span></div>
+      <div class="const-item">h = <span>6.63 × 10⁻³⁴ J s</span></div>
+      <div class="const-item">Nₐ = <span>6.02 × 10²³ mol⁻¹</span></div>
+      <div class="const-item">1 nm = <span>10⁻⁹ m</span></div>
+      <div class="const-item">1 eV = <span>1.6 × 10⁻¹⁹ J</span></div>
+    </div>
+  </div>
+  <div class="calc-grid" style="margin-bottom:16px;">
+    <div class="calc-card">
+      <h3>Speed of Light Equation</h3>
+      <div class="formula-display">c = f × λ</div>
+      <div class="input-group">
+        <label>Frequency (f)</label>
+        <div class="input-row">
+          <input type="number" id="c1-freq" placeholder="e.g.  6.0" step="any">
+          <select id="c1-funit">
+            <option value="1e14">× 10¹⁴ Hz</option>
+            <option value="1e15">× 10¹⁵ Hz</option>
+            <option value="1e12">THz</option>
+            <option value="1e9">GHz</option>
+            <option value="1">Hz</option>
+          </select>
+        </div>
+      </div>
+      <button class="calc-btn" onclick="doCalcWave()">→ Find Wavelength (λ)</button>
+      <div class="result-box" id="r-wave"><span class="rl">Wavelength λ</span><span class="rv" id="rv-wave">—</span></div>
+      <div class="divider"></div>
+      <div class="input-group">
+        <label>Wavelength (λ)</label>
+        <div class="input-row">
+          <input type="number" id="c1-wave" placeholder="e.g.  500" step="any">
+          <select id="c1-wunit">
+            <option value="1e-9">nm</option>
+            <option value="1e-6">μm</option>
+            <option value="1e-2">cm</option>
+            <option value="1e-3">mm</option>
+            <option value="1">m</option>
+          </select>
+        </div>
+      </div>
+      <button class="calc-btn" onclick="doCalcFreq()">→ Find Frequency (f)</button>
+      <div class="result-box" id="r-freq"><span class="rl">Frequency f</span><span class="rv" id="rv-freq">—</span></div>
+    </div>
+    <div class="calc-card">
+      <h3>Energy of a Photon</h3>
+      <div class="formula-display">E = hν = hc/λ</div>
+      <div class="input-group">
+        <label>From Frequency (ν)</label>
+        <div class="input-row">
+          <input type="number" id="e1-freq" placeholder="e.g.  6.0" step="any">
+          <select id="e1-funit">
+            <option value="1e14">× 10¹⁴ Hz</option>
+            <option value="1e15">× 10¹⁵ Hz</option>
+            <option value="1e12">THz</option>
+            <option value="1">Hz</option>
+          </select>
+        </div>
+      </div>
+      <button class="calc-btn" onclick="doEnergyFromFreq()">→ Find Energy</button>
+      <div class="result-box" id="r-efq"><span class="rl">Energy per photon</span><span class="rv" id="rv-efq">—</span><span class="rl" id="rv-efq-mol"></span></div>
+      <div class="divider"></div>
+      <div class="input-group">
+        <label>From Wavelength (λ)</label>
+        <div class="input-row">
+          <input type="number" id="e1-wave" placeholder="e.g.  400" step="any">
+          <select id="e1-wunit">
+            <option value="1e-9">nm</option>
+            <option value="1e-6">μm</option>
+            <option value="1e-3">mm</option>
+            <option value="1">m</option>
+          </select>
+        </div>
+      </div>
+      <button class="calc-btn" onclick="doEnergyFromWave()">→ Find Energy</button>
+      <div class="result-box" id="r-ewv"><span class="rl">Energy per photon</span><span class="rv" id="rv-ewv">—</span><span class="rl" id="rv-ewv-mol"></span></div>
+    </div>
+  </div>
+  <div class="glass">
+    <div class="section-title">Interactive Frequency ↔ Wavelength Explorer</div>
+    <p style="font-size:12.5px;color:var(--text-dim);margin-bottom:14px;">Drag the slider to explore the full EM spectrum. Watch how frequency and wavelength are inversely related.</p>
+    <input type="range" id="freqSlider" min="1" max="100" value="45" oninput="updateSlider()">
+    <div class="slider-labels">
+      <span>Radio (10⁵ Hz)</span><span>← Visible →</span><span>γ-ray (10²⁰ Hz)</span>
+    </div>
+    <div class="three-cols">
+      <div class="result-box" style="min-height:56px;"><span class="rl">Frequency</span><span class="rv" id="sl-freq" style="font-size:13px;">—</span></div>
+      <div class="result-box" style="min-height:56px;"><span class="rl">Wavelength</span><span class="rv" id="sl-wave" style="font-size:13px;">—</span></div>
+      <div class="result-box" style="min-height:56px;"><span class="rl">EM Region</span><span class="rv" id="sl-region" style="font-size:13px;">—</span></div>
+    </div>
+    <canvas id="sliderWaveCanvas"></canvas>
+  </div>
+</div>
+
+<!-- ======== TAB 3: TRANSITIONS ======== -->
+<div id="tab-transitions" class="tab-panel">
+  <div class="glass" style="margin-bottom:16px;">
+    <div class="section-title">Quantised Energy Levels & Electronic Transitions</div>
+    <p style="font-size:12.5px;color:var(--text-dim);margin-bottom:18px;">
+      Energy levels in atoms and molecules are <strong style="color:#adc8ff;">quantised</strong> — electrons can only occupy specific discrete energy levels.
+      A photon is only absorbed if its energy <em>exactly</em> matches the energy difference between two levels: <strong style="color:#adc8ff;">ΔE = hν = hc/λ</strong>.
+    </p>
+    <div class="trans-layout">
+      <div>
+        <canvas id="transitionCanvas" height="400"></canvas>
+        <div class="status-bar" id="trans-status">Select a radiation type to begin the simulation →</div>
+      </div>
+      <div class="trans-controls">
+        <div style="font-size:11px;font-weight:600;letter-spacing:1px;color:var(--text-dim);text-transform:uppercase;margin-bottom:9px;">Select Radiation Type</div>
+        <button class="rad-btn" data-rad="ir" onclick="pickRadiation('ir')">🔴 Infrared (IR)</button>
+        <button class="rad-btn" data-rad="visible" onclick="pickRadiation('visible')">🟢 Visible Light</button>
+        <button class="rad-btn" data-rad="uv" onclick="pickRadiation('uv')">🔵 Ultraviolet (UV)</button>
+        <button class="rad-btn" data-rad="xray" onclick="pickRadiation('xray')">⚡ X-rays</button>
+        <div class="trans-info" id="trans-info">
+          <h4 style="color:var(--accent);">ABOUT THIS SIMULATION</h4>
+          <p style="color:var(--text-dim);">Select a radiation type to see how electrons in a hydrogen-like atom respond to different types of electromagnetic radiation. Each type causes a different kind of transition.</p>
+        </div>
+        <div class="eq-box">
+          <div class="eq-title">KEY EQUATIONS</div>
+          <div class="eq-formula">ΔE = hν = hc/λ</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:8px;line-height:1.8;">
+            Eₙ = −13.6/n² eV (H atom)<br>
+            h = 6.63 × 10⁻³⁴ J s<br>
+            c = 3.0 × 10⁸ m s⁻¹
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="glass">
+    <div class="section-title">Energy Level Diagram</div>
+    <p style="font-size:12.5px;color:var(--text-dim);margin-bottom:12px;">The Lyman, Balmer and higher series result from transitions back to n=1, n=2 etc. The arrows show which radiation causes which transition.</p>
+    <canvas id="energyCanvas" height="210" style="width:100%;display:block;"></canvas>
+  </div>
+</div>
+
+<!-- ======== TAB 4: QUIZ ======== -->
+<div id="tab-quiz" class="tab-panel">
+  <div class="glass">
+    <div class="section-title">Quiz — EM Radiation & Energy Quanta</div>
+    <div class="quiz-header">
+      <div class="prog-wrap"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="prog-text" id="prog-text">Q 0 / 0</div>
+      <div class="score-text" id="score-text">Score: 0</div>
+    </div>
+    <div id="q-container">
+      <div class="q-card" id="q-card">
+        <span class="q-badge b-mcq" id="q-badge">MCQ</span>
+        <div class="q-text" id="q-text">Loading…</div>
+        <div id="opts-div" class="opts-grid"></div>
+        <div id="calc-div" style="display:none;">
+          <div class="calc-ans-row">
+            <input type="number" id="calc-ans" placeholder="Enter numerical answer" step="any">
+            <span class="unit-label" id="calc-unit-lbl">J</span>
+            <button class="submit-btn" onclick="submitCalc()">Check</button>
+          </div>
+        </div>
+        <div class="feedback" id="feedback"></div>
+        <button class="next-btn" id="next-btn" onclick="nextQ()">Next Question →</button>
+      </div>
+    </div>
+    <div class="quiz-done" id="quiz-done">
+      <div style="font-family:'Share Tech Mono';font-size:11px;color:var(--text-dim);letter-spacing:2px;margin-bottom:8px;">QUIZ COMPLETE</div>
+      <h2>Final Results</h2>
+      <div class="final-score" id="final-score">—</div>
+      <div id="final-msg" style="color:var(--text-dim);font-size:14.5px;margin-bottom:18px;"></div>
+      <button class="restart-btn" onclick="restartQuiz()">Try Again</button>
+    </div>
+  </div>
+</div>
+
+</main>
+<script>
+// =====================================================================
+// CONSTANTS & DATA
+// =====================================================================
+const c=3e8, h=6.63e-34, Na=6.02e23;
+
+const REGIONS=[
+  {id:'radio',name:'Radio Waves',shortName:'Radio',color:'#a05020',
+   freqMin:1e5,freqMax:1e8,waveMin:1,waveMax:1e3,
+   freqDisplay:'10⁵ – 10⁸ Hz',waveDisplay:'1 m – 10³ m (1 km)',
+   energyDisplay:'~10⁻²⁹ – 10⁻²⁶ J',typeDisplay:'Non-ionising',
+   danger:'✅ Safe — negligible biological risk',
+   uses:'<b>Uses:</b> AM/FM radio, television, mobile phones, radar, MRI machines.<br><br>Radio waves have the lowest energy of all EM radiation. They easily penetrate buildings and pass through the atmosphere, making them ideal for communication.',
+   waveMult:1},
+  {id:'microwave',name:'Microwaves',shortName:'Microwave',color:'#d06010',
+   freqMin:1e8,freqMax:1e11,waveMin:1e-3,waveMax:1,
+   freqDisplay:'10⁸ – 10¹¹ Hz',waveDisplay:'10⁻³ m – 1 m',
+   energyDisplay:'~10⁻²⁶ – 10⁻²³ J',typeDisplay:'Non-ionising',
+   danger:'⚠️ Mostly safe — can heat tissue in high doses',
+   uses:'<b>Uses:</b> Microwave ovens, Wi-Fi, Bluetooth, satellite communication, radar speed guns.<br><br>Microwaves cause <b>rotational transitions</b> in molecules. Water molecules absorb them strongly — the basis of microwave cooking.',
+   waveMult:2},
+  {id:'ir',name:'Infrared (IR)',shortName:'Infrared',color:'#cc2200',
+   freqMin:1e11,freqMax:4.3e14,waveMin:7e-7,waveMax:1e-3,
+   freqDisplay:'10¹¹ – 4.3×10¹⁴ Hz',waveDisplay:'7×10⁻⁷ m – 10⁻³ m',
+   energyDisplay:'~10⁻²³ – 10⁻¹⁹ J',typeDisplay:'Non-ionising',
+   danger:'⚠️ Thermal burns possible at high intensity',
+   uses:'<b>Uses:</b> IR spectroscopy (functional group ID), thermal imaging, TV remotes, night vision, greenhouse gas monitoring.<br><br>IR causes <b>vibrational transitions</b> in molecules — bonds stretch and bend. CO₂ and H₂O absorb IR, driving the greenhouse effect.',
+   waveMult:4},
+  {id:'visible',name:'Visible Light',shortName:'Visible',color:'gradient',
+   freqMin:4.3e14,freqMax:7.5e14,waveMin:400e-9,waveMax:700e-9,
+   freqDisplay:'4.5×10¹⁴ – 7.5×10¹⁴ Hz',waveDisplay:'400 nm – 700 nm',
+   energyDisplay:'~2.8×10⁻¹⁹ – 5.0×10⁻¹⁹ J',typeDisplay:'Non-ionising',
+   danger:'⚠️ Intense light can damage eyes — otherwise safe',
+   uses:'<b>Uses:</b> Human vision, UV/Vis spectroscopy (Beer-Lambert Law), photography, photosynthesis (chlorophyll), optical fibres.<br><br>Visible light causes <b>electronic transitions</b> in molecules. Coloured compounds absorb specific wavelengths of visible light.',
+   waveMult:8},
+  {id:'uv',name:'Ultraviolet (UV)',shortName:'UV',color:'#8800cc',
+   freqMin:7.5e14,freqMax:1e17,waveMin:1e-9,waveMax:400e-9,
+   freqDisplay:'7.5×10¹⁴ – 10¹⁶ Hz',waveDisplay:'10 nm – 400 nm',
+   energyDisplay:'~5×10⁻¹⁹ – 10⁻¹⁷ J',typeDisplay:'Ionising (high UV)',
+   danger:'🔴 Dangerous — sunburn, skin cancer, eye damage, DNA damage',
+   uses:'<b>Uses:</b> UV/Vis spectroscopy (π→π* transitions), germicidal sterilisation, forensics, photochemistry, ozone layer absorption.<br><br>UV can break chemical bonds. The ozone layer absorbs most harmful UV-B and UV-C, protecting life on Earth.',
+   waveMult:13},
+  {id:'xray',name:'X-rays',shortName:'X-ray',color:'#0099ee',
+   freqMin:1e16,freqMax:1e19,waveMin:1e-11,waveMax:1e-8,
+   freqDisplay:'10¹⁶ – 10¹⁸ Hz',waveDisplay:'10⁻¹¹ m – 10⁻⁸ m',
+   energyDisplay:'~10⁻¹⁷ – 10⁻¹⁵ J',typeDisplay:'Ionising',
+   danger:'🔴🔴 Very dangerous — ionising, can break DNA strands',
+   uses:'<b>Uses:</b> Medical imaging (bones), airport security, X-ray crystallography (determines molecular structure), sterilisation.<br><br><b>Ionising radiation</b> — ejects core electrons from atoms, forming ions. Used carefully in medicine but causes cancer in high doses.',
+   waveMult:22},
+  {id:'gamma',name:'Gamma Rays (γ)',shortName:'Gamma',color:'#00ffaa',
+   freqMin:1e18,freqMax:1e21,waveMin:1e-14,waveMax:1e-11,
+   freqDisplay:'10¹⁸ – 10²⁰ Hz',waveDisplay:'10⁻¹⁴ m – 10⁻¹¹ m',
+   energyDisplay:'~10⁻¹⁵ – 10⁻¹³ J',typeDisplay:'Highly ionising',
+   danger:'🔴🔴🔴 Extremely dangerous — deeply penetrating ionising radiation',
+   uses:'<b>Uses:</b> Cancer radiotherapy (targeted), food irradiation, sterilising medical equipment, PET scans, studying atomic nuclei.<br><br>Emitted during nuclear decay. Requires lead or thick concrete to shield. Exploited in cancer treatment by targeting tumours.',
+   waveMult:32}
+];
+
+// =====================================================================
+// TAB SWITCHING
+// =====================================================================
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='spectrum') setTimeout(drawSpectrum,40);
+    if(btn.dataset.tab==='transitions') setTimeout(()=>{resizeTransCanvas();drawEnergyDiagram();},40);
+    if(btn.dataset.tab==='calculator') setTimeout(updateSlider,40);
+  });
+});
+
+// =====================================================================
+// SPECTRUM TAB
+// =====================================================================
+let selectedRegion=null;
+const spCvs=document.getElementById('spectrumCanvas');
+const spCtx=spCvs.getContext('2d');
+
+function drawSpectrum(){
+  const W=spCvs.parentElement.clientWidth;
+  spCvs.width=W; spCvs.height=220;
+  const w=W, h=220;
+  const ctx=spCtx;
+  ctx.fillStyle='#040710'; ctx.fillRect(0,0,w,h);
+
+  const BAR_Y=50, BAR_H=90;
+  const n=REGIONS.length, sw=w/n;
+
+  // Top annotation
+  ctx.font='9.5px Share Tech Mono,monospace';
+  ctx.fillStyle='rgba(140,180,240,0.55)';
+  ctx.textAlign='left'; ctx.fillText('← LONGER WAVELENGTH  ·  LOWER FREQUENCY  ·  LOWER ENERGY',6,15);
+  ctx.textAlign='right'; ctx.fillText('HIGHER ENERGY  ·  HIGHER FREQUENCY  ·  SHORTER WAVELENGTH →',w-6,15);
+
+  REGIONS.forEach((r,i)=>{
+    const x=i*sw;
+    const isSel=selectedRegion&&selectedRegion.id===r.id;
+    const barY=isSel?BAR_Y-8:BAR_Y;
+    const barH=isSel?BAR_H+16:BAR_H;
+
+    let fill;
+    if(r.id==='visible'){
+      const g=ctx.createLinearGradient(x,0,x+sw,0);
+      g.addColorStop(0,'#ff0000'); g.addColorStop(0.18,'#ff8800');
+      g.addColorStop(0.36,'#ffff00'); g.addColorStop(0.55,'#00ee00');
+      g.addColorStop(0.72,'#0044ff'); g.addColorStop(1,'#8800cc');
+      fill=g;
+    } else { fill=r.color; }
+
+    ctx.shadowColor=isSel?(r.id==='visible'?'#ffffff':r.color):'transparent';
+    ctx.shadowBlur=isSel?18:0;
+    ctx.fillStyle=fill;
+    ctx.beginPath();
+    if(i===0){ roundRectPath(ctx,x,barY,sw-1,barH,8,0,0,8); }
+    else if(i===n-1){ roundRectPath(ctx,x,barY,sw-1,barH,0,8,8,0); }
+    else { ctx.rect(x,barY,sw-1,barH); }
+    ctx.fill();
+    ctx.shadowBlur=0;
+
+    // divider
+    if(i>0){ ctx.strokeStyle='rgba(0,0,0,0.5)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(x,BAR_Y-12); ctx.lineTo(x,BAR_Y+BAR_H+12); ctx.stroke(); }
+
+    // labels
+    const lx=x+sw/2;
+    ctx.textAlign='center';
+    ctx.fillStyle='rgba(255,255,255,0.9)';
+    ctx.font=`bold ${sw>75?10:8}px Orbitron,sans-serif`;
+    ctx.fillText(r.shortName,lx,barY+barH+18);
+    ctx.font=`${sw>75?9:7.5}px Share Tech Mono,monospace`;
+    ctx.fillStyle='rgba(160,200,255,0.65)';
+    ctx.fillText(r.freqDisplay.split('–')[0].trim(),lx,barY+barH+30);
+  });
+
+  // Energy gradient bar
+  const eg=ctx.createLinearGradient(0,0,w,0);
+  eg.addColorStop(0,'#331100'); eg.addColorStop(0.6,'#cc6600'); eg.addColorStop(1,'#ffffff');
+  ctx.fillStyle=eg; ctx.fillRect(0,BAR_Y+BAR_H+2,w,3);
+}
+
+function roundRectPath(ctx,x,y,w,h,tl,tr,br,bl){
+  ctx.moveTo(x+tl,y);
+  ctx.lineTo(x+w-tr,y); ctx.quadraticCurveTo(x+w,y,x+w,y+tr);
+  ctx.lineTo(x+w,y+h-br); ctx.quadraticCurveTo(x+w,y+h,x+w-br,y+h);
+  ctx.lineTo(x+bl,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-bl);
+  ctx.lineTo(x,y+tl); ctx.quadraticCurveTo(x,y,x+tl,y);
+  ctx.closePath();
+}
+
+spCvs.addEventListener('click',e=>{
+  const rect=spCvs.getBoundingClientRect();
+  const x=(e.clientX-rect.left)*(spCvs.width/rect.width);
+  const idx=Math.min(Math.floor(x/(spCvs.width/REGIONS.length)),REGIONS.length-1);
+  selectedRegion=REGIONS[idx];
+  drawSpectrum();
+  showRegionDetail(selectedRegion);
+  document.getElementById('spec-hint').style.display='none';
+});
+
+function showRegionDetail(r){
+  document.getElementById('region-detail').style.display='block';
+  const nameEl=document.getElementById('region-name');
+  nameEl.textContent=r.name;
+  nameEl.style.color=r.id==='visible'?'#ffee66':r.color;
+  document.getElementById('region-freq').textContent=r.freqDisplay;
+  document.getElementById('region-wave').textContent=r.waveDisplay;
+  document.getElementById('region-energy').textContent=r.energyDisplay;
+  document.getElementById('region-type').textContent=r.typeDisplay;
+  document.getElementById('region-danger').textContent=r.danger;
+  document.getElementById('region-uses').innerHTML=r.uses;
+  document.getElementById('region-main-card').style.borderColor=r.id==='visible'?'#ffee66':r.color;
+  document.getElementById('wave-label').textContent='WAVE PATTERN — '+r.name.toUpperCase();
+  startWaveAnim(r);
+}
+
+let waveRAF=null, wavePhase=0, activeWaveRegion=null;
+function startWaveAnim(region){
+  activeWaveRegion=region;
+  if(waveRAF) cancelAnimationFrame(waveRAF);
+  wavePhase=0; animWave();
+}
+function animWave(){
+  const cvs=document.getElementById('waveCanvas');
+  const panel=document.getElementById('wave-panel-area');
+  cvs.width=panel.clientWidth-28; cvs.height=70;
+  const ctx=cvs.getContext('2d');
+  const W=cvs.width, H=cvs.height;
+  ctx.fillStyle='#070b14'; ctx.fillRect(0,0,W,H);
+  const r=activeWaveRegion; if(!r) return;
+  const nm={radio:1,microwave:2,ir:4,visible:9,uv:15,xray:24,gamma:36};
+  const nw=nm[r.id]||5;
+  let stroke;
+  if(r.id==='visible'){
+    const g=ctx.createLinearGradient(0,0,W,0);
+    g.addColorStop(0,'#ff2200');g.addColorStop(.25,'#ffcc00');
+    g.addColorStop(.5,'#00ee00');g.addColorStop(.75,'#0044ff');g.addColorStop(1,'#9900cc');
+    stroke=g;
+  } else { stroke=r.color; }
+  ctx.strokeStyle=stroke; ctx.lineWidth=2;
+  ctx.shadowColor=r.id==='visible'?'#ffffff':r.color; ctx.shadowBlur=8;
+  ctx.beginPath();
+  for(let x=0;x<W;x++){
+    const t=(x/W)*nw*2*Math.PI+wavePhase;
+    const y=H/2+28*Math.sin(t);
+    x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.stroke(); ctx.shadowBlur=0;
+  wavePhase+=0.06;
+  waveRAF=requestAnimationFrame(animWave);
+}
+
+// =====================================================================
+// CALCULATOR TAB
+// =====================================================================
+function fmtSci(val,unit){
+  if(!isFinite(val)||val<=0) return '—';
+  const e=Math.floor(Math.log10(Math.abs(val)));
+  const m=(val/Math.pow(10,e)).toFixed(3);
+  return `${m} × 10<sup>${e}</sup> ${unit}`;
+}
+function doCalcWave(){
+  const f=parseFloat(document.getElementById('c1-freq').value)*parseFloat(document.getElementById('c1-funit').value);
+  if(isNaN(f)||f<=0){document.getElementById('rv-wave').innerHTML='Invalid input';return;}
+  const lam=c/f;
+  let txt=fmtSci(lam,'m');
+  if(lam>=1e-9&&lam<=2e-6) txt+=' = <span style="color:#adc8ff;font-size:13px;">'+(lam*1e9).toFixed(1)+' nm</span>';
+  document.getElementById('rv-wave').innerHTML=txt;
+}
+function doCalcFreq(){
+  const w=parseFloat(document.getElementById('c1-wave').value)*parseFloat(document.getElementById('c1-wunit').value);
+  if(isNaN(w)||w<=0){document.getElementById('rv-freq').innerHTML='Invalid input';return;}
+  document.getElementById('rv-freq').innerHTML=fmtSci(c/w,'Hz');
+}
+function doEnergyFromFreq(){
+  const f=parseFloat(document.getElementById('e1-freq').value)*parseFloat(document.getElementById('e1-funit').value);
+  if(isNaN(f)||f<=0){document.getElementById('rv-efq').innerHTML='Invalid';return;}
+  const E=h*f;
+  document.getElementById('rv-efq').innerHTML=fmtSci(E,'J');
+  document.getElementById('rv-efq-mol').innerHTML='= '+(E*Na/1000).toFixed(1)+' kJ mol⁻¹ (per mole of photons)';
+}
+function doEnergyFromWave(){
+  const w=parseFloat(document.getElementById('e1-wave').value)*parseFloat(document.getElementById('e1-wunit').value);
+  if(isNaN(w)||w<=0){document.getElementById('rv-ewv').innerHTML='Invalid';return;}
+  const E=(h*c)/w;
+  document.getElementById('rv-ewv').innerHTML=fmtSci(E,'J');
+  document.getElementById('rv-ewv-mol').innerHTML='= '+(E*Na/1000).toFixed(1)+' kJ mol⁻¹ (per mole of photons)';
+}
+function updateSlider(){
+  const val=parseInt(document.getElementById('freqSlider').value);
+  const logF=5+(val/100)*15;
+  const freq=Math.pow(10,logF);
+  const lam=c/freq;
+  document.getElementById('sl-freq').innerHTML=fmtSci(freq,'Hz');
+  document.getElementById('sl-wave').innerHTML=fmtSci(lam,'m');
+  let reg='Unknown';
+  for(const r of REGIONS){ if(freq>=r.freqMin&&freq<=r.freqMax){reg=r.name;break;} }
+  document.getElementById('sl-region').textContent=reg;
+  drawSliderWave(freq,reg);
+}
+function drawSliderWave(freq,regName){
+  const cvs=document.getElementById('sliderWaveCanvas');
+  cvs.width=cvs.parentElement.clientWidth; cvs.height=66;
+  const ctx=cvs.getContext('2d'); const W=cvs.width,H=cvs.height;
+  ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(0,0,W,H);
+  const lf=Math.log10(freq);
+  const nw=Math.max(1,Math.round((lf-5)/15*36));
+  const r=REGIONS.find(r=>r.name===regName)||REGIONS[3];
+  const col=r.id==='visible'?'#88ff44':r.color;
+  ctx.strokeStyle=col; ctx.lineWidth=2;
+  ctx.shadowColor=col; ctx.shadowBlur=6;
+  ctx.beginPath();
+  for(let x=0;x<W;x++){
+    const t=(x/W)*nw*2*Math.PI;
+    const y=H/2+26*Math.sin(t);
+    x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.stroke(); ctx.shadowBlur=0;
+}
+
+// =====================================================================
+// ATOMIC TRANSITIONS TAB
+// =====================================================================
+const tCvs=document.getElementById('transitionCanvas');
+const tCtx=tCvs.getContext('2d');
+let tRAF=null, tTimer=0, activeRad=null;
+
+const EDATA={
+  ir:{color:'#ff6622',name:'Infrared (IR)',
+    info:'IR radiation (10¹¹–4.3×10¹⁴ Hz) does <b>not</b> have enough energy to cause electronic transitions in atoms. Instead, it causes <b>vibrational transitions</b> in molecules — bonds stretch and bend at characteristic frequencies. This is the basis of IR spectroscopy for identifying functional groups (–OH, C=O, etc.).',
+    anim:'vib'},
+  visible:{color:'#88ff22',name:'Visible Light',
+    info:'Visible light (4.5–7.5 × 10¹⁴ Hz, 400–700 nm) causes <b>electronic transitions</b>. The electron absorbs a photon and jumps to a higher energy level (n=1→3). It then falls back, emitting a photon of the same energy/frequency. The emitted photons form the characteristic <b>emission spectrum</b>.',
+    anim:'transition',fromN:1,toN:3},
+  uv:{color:'#aa33ff',name:'Ultraviolet (UV)',
+    info:'UV radiation (>7.5×10¹⁴ Hz, <400 nm) causes higher-energy electronic transitions. The Lyman series (n=1→higher) falls in the UV region. UV can also break σ and π bonds in organic molecules and damage DNA by causing thymine dimer formation.',
+    anim:'transition',fromN:1,toN:4},
+  xray:{color:'#00bbff',name:'X-rays',
+    info:'X-rays (10¹⁶–10¹⁸ Hz) are <b>ionising radiation</b>. They carry enough energy to eject <b>core electrons</b> from atoms, creating positive ions. This ionisation can break chemical bonds and damage DNA. X-ray crystallography uses diffraction patterns to determine 3D molecular structures (e.g. Watson & Crick used X-ray data to discover DNA structure).',
+    anim:'ionise'}
+};
+
+const LEVELS={1:{r:55,E:-13.6},2:{r:92,E:-3.4},3:{r:128,E:-1.51},4:{r:164,E:-0.85}};
+
+function resizeTransCanvas(){
+  const p=tCvs.parentElement; tCvs.width=Math.min(p.clientWidth,490); tCvs.height=400;
+}
+
+function pickRadiation(type){
+  document.querySelectorAll('.rad-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`[data-rad="${type}"]`).classList.add('active');
+  activeRad=type;
+  const d=EDATA[type];
+  document.getElementById('trans-info').innerHTML=
+    `<h4 style="color:${d.color}">${d.name.toUpperCase()}</h4><p style="color:var(--text-dim)">${d.info}</p>`;
+  if(tRAF) cancelAnimationFrame(tRAF);
+  tTimer=0;
+  runTransAnim(type);
+}
+
+function runTransAnim(type){
+  const d=EDATA[type];
+  function loop(){
+    tTimer++;
+    const W=tCvs.width, H=tCvs.height;
+    const cx=W/2, cy=H/2-10;
+    const s=W/490;
+    const ctx=tCtx;
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#040710'; ctx.fillRect(0,0,W,H);
+
+    // Draw orbits
+    [1,2,3,4].forEach(n=>{
+      const r=LEVELS[n].r*s;
+      ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+      ctx.strokeStyle='rgba(80,130,200,0.2)'; ctx.lineWidth=1;
+      ctx.setLineDash([3,4]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle='rgba(80,130,200,0.45)';
+      ctx.font=`${10*s}px Share Tech Mono,monospace`;
+      ctx.textAlign='left';
+      ctx.fillText(`n=${n}`,cx+r+5*s,cy-3*s);
+      ctx.font=`${8.5*s}px Share Tech Mono,monospace`;
+      ctx.fillStyle='rgba(60,110,180,0.5)';
+      ctx.fillText(`${LEVELS[n].E} eV`,cx+r+5*s,cy+10*s);
+    });
+
+    // Nucleus
+    const ng=ctx.createRadialGradient(cx,cy,0,cx,cy,12*s);
+    ng.addColorStop(0,'#ffaa44'); ng.addColorStop(.5,'#dd3300'); ng.addColorStop(1,'#880000');
+    ctx.beginPath(); ctx.arc(cx,cy,12*s,0,Math.PI*2);
+    ctx.fillStyle=ng; ctx.shadowColor='#ff6600'; ctx.shadowBlur=14; ctx.fill(); ctx.shadowBlur=0;
+    ctx.fillStyle='#ffddaa'; ctx.font=`bold ${8.5*s}px Exo 2,sans-serif`;
+    ctx.textAlign='center'; ctx.fillText('N⁺',cx,cy+3*s);
+
+    if(type==='ir'){
+      // Show electron orbiting n=1, plus vibrating molecule below
+      const phase=tTimer*0.045;
+      const eR=LEVELS[1].r*s;
+      drawElec(ctx,cx+eR*Math.cos(phase),cy+eR*Math.sin(phase),d.color,s);
+      // Vibrating bond below
+      const vd=7*Math.sin(tTimer*0.08);
+      const atomY=cy+195*s;
+      const a1x=cx-48-vd, a2x=cx+48+vd;
+      ctx.beginPath(); ctx.moveTo(a1x+16*s,atomY); ctx.lineTo(a2x-16*s,atomY);
+      ctx.strokeStyle=d.color; ctx.lineWidth=3*s; ctx.stroke();
+      [a1x,a2x].forEach((ax,i)=>{
+        ctx.beginPath(); ctx.arc(ax,atomY,16*s,0,Math.PI*2);
+        ctx.fillStyle=i===0?'#cc3300':'#883300';
+        ctx.shadowColor=d.color; ctx.shadowBlur=9; ctx.fill(); ctx.shadowBlur=0;
+      });
+      ctx.fillStyle=d.color; ctx.font=`bold ${10*s}px Orbitron,sans-serif`;
+      ctx.textAlign='center'; ctx.fillText('MOLECULAR VIBRATION',cx,cy+160*s);
+      ctx.font=`${9*s}px Exo 2,sans-serif`; ctx.fillStyle='rgba(255,160,100,0.8)';
+      ctx.fillText('Bond length oscillates about equilibrium',cx,atomY+32*s);
+      document.getElementById('trans-status').textContent='IR → vibrational transitions (bonds stretch and bend). No electronic transition.';
+      return;
+    }
+
+    if(type==='visible'||type==='uv'){
+      const CYCLE=300;
+      const t=tTimer%CYCLE;
+      const fromN=d.fromN, toN=d.toN;
+      let elecN=1, phase=0, showPhoton=false, photonX=0, photonY=0, emitting=false;
+
+      if(t<65){
+        // photon incoming
+        const prog=t/65;
+        photonX=cx-185*s+prog*155*s; photonY=cy;
+        showPhoton=true; elecN=1; phase=tTimer*0.04;
+        document.getElementById('trans-status').textContent=`${d.name} photon approaching... energy matches ΔE between n=${fromN} and n=${toN}`;
+      } else if(t<85){
+        showPhoton=false; elecN=toN; phase=tTimer*0.04;
+        document.getElementById('trans-status').textContent=`⚡ Photon absorbed! Electron jumps n=${fromN} → n=${toN}  (ΔE = hν)`;
+      } else if(t<190){
+        elecN=toN; phase=tTimer*0.03; showPhoton=false;
+        document.getElementById('trans-status').textContent=`Electron orbiting in excited state (n=${toN}). Unstable — will fall back...`;
+      } else if(t<230){
+        elecN=fromN;
+        const prog=(t-190)/40;
+        emitting=true; showPhoton=true;
+        photonX=cx+prog*80*s; photonY=cy;
+        document.getElementById('trans-status').textContent=`Electron falls back n=${toN}→${fromN}. Photon emitted! (ΔE = hν = hc/λ)`;
+      } else {
+        elecN=fromN; showPhoton=false; phase=tTimer*0.04;
+        document.getElementById('trans-status').textContent=`Atom back in ground state (n=1). Cycle continues...`;
+      }
+
+      const eR=LEVELS[elecN].r*s;
+      const ephase= t<85||t>190 ? tTimer*0.04 : tTimer*0.03;
+      drawElec(ctx,cx+eR*Math.cos(ephase),cy+eR*Math.sin(ephase),d.color,s);
+
+      if(showPhoton){
+        const px=emitting?photonX:photonX;
+        const py=photonY;
+        drawPhoton(ctx,px,py,d.color,s);
+        if(!emitting){
+          // draw dashed arrow toward atom
+          ctx.beginPath(); ctx.moveTo(px+18*s,py); ctx.lineTo(cx-eR-14*s,cy);
+          ctx.strokeStyle=d.color; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
+        }
+      }
+
+      // Transition line indicator
+      if(t>=65&&t<190){
+        const r1=LEVELS[fromN].r*s, r2=LEVELS[toN].r*s;
+        ctx.beginPath(); ctx.moveTo(cx,cy-r1); ctx.lineTo(cx,cy-r2);
+        ctx.strokeStyle=d.color; ctx.lineWidth=2;
+        ctx.setLineDash([5,3]); ctx.stroke(); ctx.setLineDash([]);
+        // arrowhead
+        ctx.beginPath(); ctx.moveTo(cx,cy-r2);
+        ctx.lineTo(cx-5*s,cy-r2+10*s); ctx.lineTo(cx+5*s,cy-r2+10*s);
+        ctx.closePath(); ctx.fillStyle=d.color; ctx.fill();
+      }
+      return;
+    }
+
+    if(type==='xray'){
+      const CYCLE=220;
+      const t=tTimer%CYCLE;
+      if(t<60){
+        const prog=t/60;
+        const px=cx-185*s+prog*155*s;
+        drawElec(ctx,cx+LEVELS[1].r*s*Math.cos(tTimer*0.04),cy+LEVELS[1].r*s*Math.sin(tTimer*0.04),d.color,s);
+        drawPhoton(ctx,px,cy,d.color,s);
+        ctx.beginPath(); ctx.moveTo(px+18*s,cy); ctx.lineTo(cx-LEVELS[1].r*s-14*s,cy);
+        ctx.strokeStyle=d.color; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
+        document.getElementById('trans-status').textContent='High-energy X-ray photon approaching atom (energy >> ionisation energy)...';
+      } else if(t<75){
+        // flash effect
+        ctx.fillStyle='rgba(0,180,255,0.15)'; ctx.fillRect(0,0,W,H);
+        document.getElementById('trans-status').textContent='⚡⚡ IONISATION! Core electron EJECTED from atom!';
+      } else if(t<160){
+        const prog=(t-75)/85;
+        // ion label
+        ctx.fillStyle=d.color; ctx.font=`bold ${14*s}px Orbitron,sans-serif`;
+        ctx.textAlign='center'; ctx.fillText('ION FORMED  H⁺',cx,cy+220*s);
+        ctx.font=`${11*s}px Exo 2,sans-serif`; ctx.fillStyle='rgba(150,200,255,0.8)';
+        ctx.fillText('Core electron ejected → cation formed',cx,cy+238*s);
+        // flying electron
+        const ex=cx-prog*140*s, ey=cy-LEVELS[1].r*s-prog*130*s;
+        drawElec(ctx,ex,ey,d.color,s);
+        // trail
+        for(let i=1;i<=5;i++){
+          const frac=i/5;
+          ctx.beginPath(); ctx.arc(cx-prog*140*s*frac,cy-LEVELS[1].r*s-prog*130*s*frac,3*s*(1-frac*0.6),0,Math.PI*2);
+          ctx.fillStyle=`rgba(0,187,255,${0.4*(1-frac)})`; ctx.fill();
+        }
+        document.getElementById('trans-status').textContent='Atom → positive ion (cation). Ionising radiation can damage DNA and biological molecules.';
+      } else {
+        drawElec(ctx,cx+LEVELS[1].r*s*Math.cos(tTimer*0.04),cy+LEVELS[1].r*s*Math.sin(tTimer*0.04),d.color,s);
+        document.getElementById('trans-status').textContent='X-rays penetrate matter, ionising atoms. Used in medicine but dangerous in high doses.';
+      }
+      return;
+    }
+    tRAF=requestAnimationFrame(loop);
+  }
+  resizeTransCanvas();
+  loop();
+  tRAF=requestAnimationFrame(loop);
+}
+
+function drawElec(ctx,x,y,col,s){
+  const r=8*s;
+  const g=ctx.createRadialGradient(x-r*0.3,y-r*0.3,0,x,y,r);
+  g.addColorStop(0,'#ffffff'); g.addColorStop(0.35,col); g.addColorStop(1,col+'88');
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle=g; ctx.shadowColor=col; ctx.shadowBlur=18; ctx.fill(); ctx.shadowBlur=0;
+  ctx.fillStyle='#fff'; ctx.font=`bold ${7.5*s}px Exo 2`;
+  ctx.textAlign='center'; ctx.fillText('e⁻',x,y+2.5*s);
+}
+function drawPhoton(ctx,x,y,col,s){
+  const r=9*s;
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle=col; ctx.shadowColor=col; ctx.shadowBlur=22; ctx.fill(); ctx.shadowBlur=0;
+  for(let i=0;i<6;i++){
+    const a=(i/6)*Math.PI*2;
+    ctx.beginPath(); ctx.moveTo(x+(r+3*s)*Math.cos(a),y+(r+3*s)*Math.sin(a));
+    ctx.lineTo(x+(r+9*s)*Math.cos(a),y+(r+9*s)*Math.sin(a));
+    ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.stroke();
+  }
+  ctx.fillStyle='#fff'; ctx.font=`bold ${7*s}px Exo 2`;
+  ctx.textAlign='center'; ctx.fillText('γ',x,y+2.5*s);
+}
+
+function drawEnergyDiagram(){
+  const cvs=document.getElementById('energyCanvas');
+  cvs.width=cvs.parentElement.clientWidth; cvs.height=210;
+  const ctx=cvs.getContext('2d'); const W=cvs.width,H=cvs.height;
+  ctx.fillStyle='#040710'; ctx.fillRect(0,0,W,H);
+  const lx=140, rx=W-90;
+  const lvls=[
+    {n:'∞',E:'0',y:22,label:'Ionisation limit (0 eV)'},
+    {n:4,E:'−0.85',y:65},
+    {n:3,E:'−1.51',y:90},
+    {n:2,E:'−3.40',y:130},
+    {n:1,E:'−13.6',y:185}
+  ];
+  lvls.forEach(l=>{
+    ctx.beginPath(); ctx.moveTo(lx,l.y); ctx.lineTo(rx-60,l.y);
+    ctx.strokeStyle=l.n==='∞'?'rgba(255,200,0,0.45)':'rgba(80,160,255,0.55)';
+    ctx.lineWidth=l.n===1?2:1;
+    ctx.setLineDash(l.n==='∞'?[5,3]:[]);  ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='rgba(140,180,255,0.8)'; ctx.font='11px Share Tech Mono,monospace';
+    ctx.textAlign='right'; ctx.fillText(`n=${l.n}`,lx-8,l.y+4);
+    ctx.textAlign='left'; ctx.fillText(`${l.E} eV`,rx-55,l.y+4);
+  });
+  // Arrows
+  function arrow(x,y1,y2,col,lbl){
+    ctx.beginPath(); ctx.moveTo(x,y1-2); ctx.lineTo(x,y2+10);
+    ctx.strokeStyle=col; ctx.lineWidth=2; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x,y2); ctx.lineTo(x-5,y2+10); ctx.lineTo(x+5,y2+10);
+    ctx.closePath(); ctx.fillStyle=col; ctx.fill();
+    ctx.fillStyle=col; ctx.font='9.5px Exo 2,sans-serif'; ctx.textAlign='center';
+    ctx.fillText(lbl,x,y2-5);
+  }
+  arrow(rx-20,lvls[4].y,lvls[0].y,'#00bbff','X-ray');
+  arrow(rx-42,lvls[4].y,lvls[1].y,'#aa33ff','UV');
+  arrow(rx-63,lvls[4].y,lvls[2].y,'#88ff22','Vis');
+  arrow(rx-85,lvls[4].y,lvls[3].y,'#ff9955','IR/UV');
+  ctx.fillStyle='rgba(100,160,220,0.5)'; ctx.font='9.5px Share Tech Mono';
+  ctx.textAlign='center'; ctx.fillText('← GROUND STATE (n=1)',W/4,H-4);
+}
+
+// =====================================================================
+// QUIZ
+// =====================================================================
+const QS=[
+  {type:'mcq',badge:'b-mcq',
+   text:'Which of the following correctly describes the relationship between frequency (f) and wavelength (λ) of electromagnetic radiation?',
+   opts:['A. f is directly proportional to λ','B. f is inversely proportional to λ','C. f equals λ divided by the speed of light','D. f and λ are independent of each other'],
+   correct:1,expl:'From c = fλ → f = c/λ. Since c is constant, f and λ are inversely proportional: doubling frequency halves wavelength.'},
+  {type:'mcq',badge:'b-id',
+   text:'Radiation of frequency 6.0 × 10¹⁴ Hz is directed at a sample. Which type of EM radiation is this?',
+   opts:['A. Infrared','B. Visible Light','C. Ultraviolet','D. Microwave'],
+   correct:1,expl:'Visible light: 4.5×10¹⁴ – 7.5×10¹⁴ Hz. 6.0×10¹⁴ Hz falls in this range (orange/yellow region).'},
+  {type:'calc',badge:'b-calc',
+   text:'Calculate the wavelength of EM radiation with frequency 6.0 × 10¹⁴ Hz.\n(c = 3.0 × 10⁸ m s⁻¹)\nGive your answer in nm.',
+   ans:500,tol:3,unit:'nm',
+   expl:'λ = c/f = (3.0×10⁸) ÷ (6.0×10¹⁴) = 5.0×10⁻⁷ m = 500 nm  (green/yellow visible light)'},
+  {type:'mcq',badge:'b-mcq',
+   text:'An electron in an excited hydrogen atom falls from energy level n=3 to n=1. What happens?',
+   opts:['A. A photon is absorbed with energy ΔE = hν','B. A photon is emitted with energy ΔE = hν','C. The electron loses all its energy as heat','D. The atom becomes ionised'],
+   correct:1,expl:'When an electron drops to a lower energy level, the energy difference ΔE = E₃ – E₁ is released as a photon (hν). This is emission spectroscopy.'},
+  {type:'calc',badge:'b-calc',
+   text:'Calculate the energy (in J) of a photon of frequency 1.01 × 10¹² Hz.\n(h = 6.63 × 10⁻³⁴ J s)\nGive your answer as a coefficient ×10⁻²² (e.g. enter 6.7 for 6.7×10⁻²² J).',
+   ans:6.70,tol:0.25,unit:'× 10⁻²² J',
+   expl:'ΔE = hν = 6.63×10⁻³⁴ × 1.01×10¹² = 6.70×10⁻²² J'},
+  {type:'mcq',badge:'b-mcq',
+   text:'Why are X-rays classified as ionising radiation?',
+   opts:['A. They travel faster than other EM waves','B. They carry enough energy to eject electrons from atoms','C. They cause vibrational transitions in molecules','D. They are absorbed by the ozone layer'],
+   correct:1,expl:'X-rays have very high frequency (10¹⁶–10¹⁸ Hz) → high energy (E = hν). This energy exceeds the ionisation energy of atoms, allowing ejection of core electrons to form ions.'},
+  {type:'mcq',badge:'b-id',
+   text:'Arrange the following in order of INCREASING energy:\nGamma rays, Radio waves, Infrared, X-rays, Visible light',
+   opts:['A. Radio < Infrared < Visible < X-rays < Gamma','B. Gamma < X-rays < Visible < Infrared < Radio','C. Radio < Visible < Infrared < X-rays < Gamma','D. Infrared < Radio < X-rays < Visible < Gamma'],
+   correct:0,expl:'Energy increases with frequency: Radio (10⁵–10⁸) < IR (10¹¹–10¹⁴) < Visible (4.5–7.5×10¹⁴) < X-rays (10¹⁶–10¹⁸) < Gamma (10¹⁸–10²⁰ Hz).'},
+  {type:'calc',badge:'b-calc',
+   text:'Calculate the energy per mole of photons for radiation of wavelength 300 nm.\n(h = 6.63 × 10⁻³⁴ J s, c = 3.0 × 10⁸ m s⁻¹, Nₐ = 6.02 × 10²³ mol⁻¹)\nGive your answer in kJ mol⁻¹ (nearest whole number).',
+   ans:399,tol:6,unit:'kJ mol⁻¹',
+   expl:'E = hc/λ = (6.63×10⁻³⁴ × 3.0×10⁸)/(300×10⁻⁹) = 6.63×10⁻¹⁹ J per photon\nE per mole = 6.63×10⁻¹⁹ × 6.02×10²³ = 399 kJ mol⁻¹'},
+  {type:'mcq',badge:'b-mcq',
+   text:'Which equation gives the energy of a photon in terms of its wavelength?',
+   opts:['A. E = hλ/c','B. E = hcλ','C. E = hc/λ','D. E = λc/h'],
+   correct:2,expl:'Since E = hν and ν = c/λ, substituting: E = h(c/λ) = hc/λ. Energy is inversely proportional to wavelength.'},
+  {type:'mcq',badge:'b-id',
+   text:'Infrared (IR) spectroscopy can identify functional groups in organic molecules because:',
+   opts:['A. IR ionises organic molecules to produce ions','B. Specific bonds absorb IR at characteristic frequencies, causing vibrational transitions','C. IR causes electrons to jump between atomic orbitals','D. All organic compounds reflect IR equally'],
+   correct:1,expl:'Bonds (–OH, C=O, N–H, C–C, etc.) absorb IR at characteristic wavenumbers, causing stretching and bending vibrations. This produces a unique fingerprint spectrum for identification.'},
+  {type:'calc',badge:'b-calc',
+   text:'Radiation has wavelength 200 nm. Calculate its frequency in Hz.\n(c = 3.0 × 10⁸ m s⁻¹)\nGive your answer as a coefficient × 10¹⁵ (e.g. enter 1.5 for 1.5×10¹⁵ Hz).',
+   ans:1.50,tol:0.05,unit:'× 10¹⁵ Hz',
+   expl:'f = c/λ = 3.0×10⁸ ÷ (200×10⁻⁹) = 3.0×10⁸ ÷ 2.0×10⁻⁷ = 1.5×10¹⁵ Hz (UV region)'},
+  {type:'mcq',badge:'b-mcq',
+   text:'The Planck constant h = 6.63 × 10⁻³⁴ J s. What are the correct units for frequency?',
+   opts:['A. m s⁻¹','B. s⁻¹ (Hz)','C. J m','D. kg m s⁻²'],
+   correct:1,expl:'From E = hν → ν = E/h. Units: J ÷ (J s) = s⁻¹ = Hz. Frequency is the number of wave cycles per second.'},
+];
+
+let qList=[],qIdx=0,qScore=0,qAnswered=false;
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+
+function initQuiz(){
+  qList=shuffle(QS); qIdx=0; qScore=0; qAnswered=false;
+  document.getElementById('quiz-done').style.display='none';
+  document.getElementById('q-card').style.display='block';
+  renderQ();
+}
+
+function renderQ(){
+  if(qIdx>=qList.length){showDone();return;}
+  const q=qList[qIdx]; qAnswered=false;
+  document.getElementById('prog-fill').style.width=(qIdx/qList.length*100)+'%';
+  document.getElementById('prog-text').textContent=`Q ${qIdx+1} / ${qList.length}`;
+  document.getElementById('score-text').textContent=`Score: ${qScore}`;
+  const badge=document.getElementById('q-badge');
+  badge.textContent=q.badge==='b-mcq'?'MCQ':q.badge==='b-calc'?'CALCULATION':'IDENTIFY';
+  badge.className='q-badge '+q.badge;
+  document.getElementById('q-text').textContent=q.text;
+  document.getElementById('feedback').style.display='none';
+  document.getElementById('next-btn').style.display='none';
+  const opts=document.getElementById('opts-div');
+  const calc=document.getElementById('calc-div');
+  opts.innerHTML='';
+  if(q.type==='mcq'){
+    opts.style.display='grid'; calc.style.display='none';
+    q.opts.forEach((o,i)=>{
+      const b=document.createElement('button');
+      b.className='opt-btn'; b.textContent=o;
+      b.onclick=()=>pickOpt(i,q.correct,q.expl); opts.appendChild(b);
+    });
+  } else {
+    opts.style.display='none'; calc.style.display='block';
+    document.getElementById('calc-ans').value='';
+    document.getElementById('calc-unit-lbl').textContent=q.unit;
+    setTimeout(()=>document.getElementById('calc-ans').focus(),50);
+  }
+}
+
+function pickOpt(sel,correct,expl){
+  if(qAnswered) return; qAnswered=true;
+  const btns=document.querySelectorAll('#opts-div .opt-btn');
+  btns.forEach((b,i)=>{b.disabled=true; if(i===correct)b.classList.add('correct'); else if(i===sel)b.classList.add('wrong');});
+  if(sel===correct){qScore++; document.getElementById('score-text').textContent='Score: '+qScore;}
+  showFeedback(sel===correct,expl);
+}
+
+function submitCalc(){
+  if(qAnswered) return;
+  const q=qList[qIdx];
+  const v=parseFloat(document.getElementById('calc-ans').value);
+  if(isNaN(v)){alert('Please enter a number.');return;}
+  qAnswered=true;
+  const ok=Math.abs(v-q.ans)<=q.tol;
+  if(ok){qScore++; document.getElementById('score-text').textContent='Score: '+qScore;}
+  showFeedback(ok,`Correct: ${q.ans} ${q.unit}\n${q.expl}`,v,q.unit);
+}
+
+function showFeedback(ok,expl,val,unit){
+  const fb=document.getElementById('feedback');
+  if(ok){
+    fb.className='feedback ok';
+    fb.innerHTML='✅ <b>Correct!</b><br>'+expl.replace(/\n/g,'<br>');
+  } else {
+    fb.className='feedback bad';
+    const pre=val!==undefined?`Your answer: ${val} ${unit}<br>`:'';
+    fb.innerHTML='❌ <b>Incorrect.</b><br>'+pre+expl.replace(/\n/g,'<br>');
+  }
+  fb.style.display='block';
+  document.getElementById('next-btn').style.display='inline-block';
+}
+
+function nextQ(){qIdx++;renderQ();}
+
+function showDone(){
+  document.getElementById('q-card').style.display='none';
+  const done=document.getElementById('quiz-done'); done.style.display='block';
+  document.getElementById('prog-fill').style.width='100%';
+  document.getElementById('prog-text').textContent='Complete!';
+  document.getElementById('final-score').textContent=`${qScore} / ${qList.length}`;
+  const pct=Math.round(qScore/qList.length*100);
+  document.getElementById('final-msg').textContent=
+    pct>=90?'🏆 Outstanding! You have mastered EM radiation and energy quanta.':
+    pct>=70?'⭐ Great work! Review the questions you missed.':
+    pct>=50?'📚 Good effort. Revise E = hν, the EM spectrum regions, and ionisation.':
+    '🔄 Keep studying! Focus on c = fλ, E = hν = hc/λ, and the relative energies of EM radiation.';
+}
+
+function restartQuiz(){
+  document.getElementById('quiz-done').style.display='none';
+  document.getElementById('q-card').style.display='block';
+  initQuiz();
+}
+
+// =====================================================================
+// INIT
+// =====================================================================
+window.addEventListener('resize',()=>{
+  drawSpectrum();
+  resizeTransCanvas();
+  drawEnergyDiagram();
+  updateSlider();
+  if(activeWaveRegion) {/* wave canvas auto-resizes in animWave loop */}
+});
+
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
+    drawSpectrum();
+    drawEnergyDiagram();
+    resizeTransCanvas();
+    updateSlider();
+  },120);
+  initQuiz();
+});
+
+document.fonts.ready.then(()=>{drawSpectrum();drawEnergyDiagram();});
+
+// =====================================================================
+// THEME TOGGLE
+// =====================================================================
+let isDark = true;
+function toggleTheme(){
+  isDark = !isDark;
+  document.body.classList.toggle("light", !isDark);
+  document.getElementById("theme-icon").textContent  = isDark ? "☀️" : "🌙";
+  document.getElementById("theme-label").textContent = isDark ? "Light Mode" : "Dark Mode";
+  localStorage.setItem("em-theme", isDark ? "dark" : "light");
+  setTimeout(()=>{ drawSpectrum(); drawEnergyDiagram(); updateSlider(); }, 50);
+}
+
+// =====================================================================
+// FONT SIZE CONTROL
+// =====================================================================
+let baseFontSize = 16;
+const FONT_MIN = 12, FONT_MAX = 26;
+function changeFontSize(delta){
+  baseFontSize = Math.min(FONT_MAX, Math.max(FONT_MIN, baseFontSize + delta));
+  document.documentElement.style.setProperty("--base-font", baseFontSize + "px");
+  document.getElementById("font-size-display").textContent = baseFontSize + "px";
+  localStorage.setItem("em-fontsize", baseFontSize);
+}
+
+// =====================================================================
+// RESTORE SAVED PREFERENCES
+// =====================================================================
+(function restorePrefs(){
+  const savedTheme = localStorage.getItem("em-theme");
+  if(savedTheme === "light"){
+    isDark = false;
+    document.body.classList.add("light");
+    document.getElementById("theme-icon").textContent = "🌙";
+    document.getElementById("theme-label").textContent = "Dark Mode";
+  }
+  const savedFont = parseInt(localStorage.getItem("em-fontsize"));
+  if(savedFont && savedFont >= FONT_MIN && savedFont <= FONT_MAX){
+    baseFontSize = savedFont;
+    document.documentElement.style.setProperty("--base-font", baseFontSize + "px");
+    document.getElementById("font-size-display").textContent = baseFontSize + "px";
+  }
+})();
+
+// Enter key support for quiz calc
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.getElementById('calc-ans')===document.activeElement) submitCalc();
+});
+</script>
+</body>
+</html>
