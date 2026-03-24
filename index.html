@@ -1173,7 +1173,7 @@ window.addEventListener('load', async ()=>{
     resizeTransCanvas();
     updateSlider();
   },120);
-   const auth = await requireAppAccess('er', 'no-access.html');
+   const auth = await requireAppAccess('emr', 'no-access.html');
   if (!auth) return;
   document.getElementById('page-loader').remove();
   initQuiz();
